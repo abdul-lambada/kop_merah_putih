@@ -4,33 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Koperasi Merah Putih Desa</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&family=Times+New+Roman&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#b91c1c',      // merah utama
-                        primaryDark: '#7f1d1d',  // merah gelap
-                        accent: '#ffffff',       // putih khas
-                        cream: '#fff7ed',        // putih krem
-                        warm: '#fef2f2',         // latar merah muda
-                    },
-                    fontFamily: {
-                        classic: ['Georgia', 'Times New Roman', 'serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body.text-small { font-size: 0.95rem; }
-        body.text-normal { font-size: 1rem; }
-        body.text-large { font-size: 1.08rem; }
+        [x-cloak] { display: none !important; }
+        html.text-small body { font-size: 0.95rem; }
+        html.text-normal body { font-size: 1rem; }
+        html.text-large body { font-size: 1.08rem; }
     </style>
 </head>
 <body class="bg-cream text-gray-900 font-classic antialiased">
@@ -178,7 +161,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-warm border-t-4 border-primary">
+    <footer class="bg-primary text-cream border-t-4 border-accent">
         <div class="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-3 gap-8 text-cream">
             <div>
                 <h4 class="text-xl font-bold text-accent mb-2">Koperasi Merah Putih</h4>
@@ -202,7 +185,7 @@
     </footer>
 
     <!-- Modal pendaftaran -->
-    <div x-show="showRegistration" x-transition class="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
+    <div x-show="showRegistration" x-cloak x-transition class="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
         <div class="bg-white rounded-xl border-4 border-primary w-full max-w-lg shadow-2xl p-6 relative">
             <button class="absolute right-4 top-4 text-primary hover:text-primaryDark" @click="showRegistration=false">✕</button>
             <h3 class="text-2xl font-bold text-primary mb-4">Form Pendaftaran Anggota</h3>

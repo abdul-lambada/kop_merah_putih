@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&family=Times+New+Roman&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+}
