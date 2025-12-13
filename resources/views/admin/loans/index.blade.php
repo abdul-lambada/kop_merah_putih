@@ -168,7 +168,7 @@
                                 @forelse($loans as $loan)
                                     <tr>
                                         <td>
-                                            <span class="badge bg-warning">{{ $loan->savings_loan_number }}</span>
+                                            <span class="badge bg-warning">{{ $loan->transaction_number }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -186,11 +186,11 @@
                                         <td>{{ $loan->created_at->format('d M Y') }}</td>
                                         <td>
                                             <span class="text-warning fw-bold">Rp {{ number_format($loan->amount, 0, ',', '.') }}</span>
-                                            <br><small class="text-muted">{{ $loan->tenure }} bulan</small>
+                                            <br><small class="text-muted">{{ $loan->tenure_months }} bulan</small>
                                         </td>
                                         <td>
-                                            <span class="text-{{ $loan->remaining_amount > 0 ? 'danger' : 'success' }} fw-bold">
-                                                Rp {{ number_format($loan->remaining_amount, 0, ',', '.') }}
+                                            <span class="text-{{ $loan->remaining_balance > 0 ? 'danger' : 'success' }} fw-bold">
+                                                Rp {{ number_format($loan->remaining_balance, 0, ',', '.') }}
                                             </span>
                                         </td>
                                         <td>

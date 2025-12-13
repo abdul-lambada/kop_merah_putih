@@ -18,7 +18,7 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!Auth::check()) {
-            return redirect()->route('auth.login')
+            return redirect()->route('login')
                 ->with('error', 'Silakan login terlebih dahulu');
         }
 
@@ -37,7 +37,7 @@ class RoleMiddleware
         if (!$hasRole) {
             // If user has no roles, redirect to login
             if (empty($userRoles)) {
-                return redirect()->route('auth.login')
+                return redirect()->route('login')
                     ->with('error', 'Akun Anda belum memiliki role yang ditentukan');
             }
 

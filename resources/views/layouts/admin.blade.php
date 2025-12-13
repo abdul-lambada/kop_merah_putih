@@ -16,6 +16,7 @@
 
     <!-- Icons -->
     <link rel="stylesheet" href="{{ asset('sneat-1.0.0/assets/vendor/fonts/boxicons.css') }}" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
 
     <!-- Core CSS -->
     <link rel="stylesheet" href="{{ asset('sneat-1.0.0/assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
@@ -318,6 +319,9 @@
     <script src="{{ asset('sneat-1.0.0/assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="{{ asset('sneat-1.0.0/assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('sneat-1.0.0/assets/vendor/js/bootstrap.js') }}"></script>
+
+    <!-- Menu JS -->
+    <script src="{{ asset('sneat-1.0.0/assets/vendor/js/menu.js') }}"></script>
 
     <!-- Vite JS -->
     @vite(['resources/js/app.js'])

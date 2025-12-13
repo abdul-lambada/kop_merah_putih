@@ -196,16 +196,16 @@
                                             <small>Rp {{ number_format($unit->initial_capital, 0, ',', '.') }}</small>
                                         </td>
                                         <td>
-                                            <span class="text-success fw-bold">Rp {{ number_format($unit->monthlyRevenue(), 0, ',', '.') }}</span>
+                                            <span class="text-success fw-bold">Rp {{ number_format($unit->monthlyRevenue, 0, ',', '.') }}</span>
                                         </td>
                                         <td>
-                                            <span class="text-{{ $unit->monthlyProfit() >= 0 ? 'success' : 'danger' }} fw-bold">
-                                                Rp {{ number_format($unit->monthlyProfit(), 0, ',', '.') }}
+                                            <span class="text-{{ $unit->monthlyProfit >= 0 ? 'success' : 'danger' }} fw-bold">
+                                                Rp {{ number_format($unit->monthlyProfit, 0, ',', '.') }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $unit->roi() >= 10 ? 'success' : ($unit->roi() >= 0 ? 'warning' : 'danger') }}">
-                                                {{ number_format($unit->roi(), 1) }}%
+                                            <span class="badge bg-{{ $unit->roi >= 10 ? 'success' : ($unit->roi >= 0 ? 'warning' : 'danger') }}">
+                                                {{ number_format($unit->roi, 1) }}%
                                             </span>
                                         </td>
                                         <td>
@@ -234,9 +234,10 @@
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <a href="{{ route('admin.units.transaction', $unit) }}" class="dropdown-item">
+                                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#transactionModal{{ $unit->id }}">
                                                             <i class="ti ti-cash ti-sm me-1"></i> Transaksi
-                                                        </a>
+                                                        </button>
+                                                    </li>
                                                     </li>
                                                     <li>
                                                         <a href="{{ route('admin.units.report', $unit) }}" class="dropdown-item">
@@ -318,4 +319,68 @@
         </div>
     </div>
 </div>
+
+<!-- Transaction Modals for each unit -->
+@foreach($units as $unit)
+<div class="modal fade" id="transactionModal{{ $unit->id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.units.transaction', $unit) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Transaksi - {{ $unit->name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe Transaksi *</label>
+                        <select name="type" class="form-select" required>
+                            <option value="">Pilih Tipe</option>
+                            <option value="income">Pemasukan</option>
+                            <option value="expense">Pengeluaran</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Kategori *</label>
+                        <input type="text" name="category" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" name="amount" class="form-control" min="0" step="1000" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Keterangan *</label>
+                        <input type="text" name="description" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tanggal Transaksi *</label>
+                        <input type="date" name="transaction_date" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Metode Pembayaran</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Tunai</option>
+                            <option value="transfer">Transfer</option>
+                            <option value="debit">Kartu Debit</option>
+                            <option value="credit">Kartu Kredit</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

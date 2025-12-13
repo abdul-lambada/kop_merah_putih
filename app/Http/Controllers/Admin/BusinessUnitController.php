@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BusinessUnit;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
 
 class BusinessUnitController extends Controller
 {
@@ -42,7 +44,17 @@ class BusinessUnitController extends Controller
             ->get()
             ->keyBy('type');
 
-        return view('admin.units.index', compact('units', 'statsByType'));
+        // Overall statistics
+        $stats = [
+            'total_units' => BusinessUnit::count(),
+            'active_units' => BusinessUnit::where('status', 'active')->count(),
+            'total_revenue' => Transaction::where('type', 'income')->sum('amount'),
+            'total_capital' => BusinessUnit::sum('initial_capital'),
+            'avg_roi' => BusinessUnit::where('initial_capital', '>', 0)
+                ->avg(DB::raw('((current_balance - initial_capital) / initial_capital) * 100')),
+        ];
+
+        return view('admin.units.index', compact('units', 'statsByType', 'stats'));
     }
 
     public function create()
@@ -304,5 +316,58 @@ class BusinessUnitController extends Controller
             'topCategories',
             'dailyTrend'
         ));
+    }
+
+    public function reportPDF(BusinessUnit $unit)
+    {
+        // Get the same data as regular report
+        $monthlyData = Transaction::where('business_unit_id', $unit->id)
+            ->selectRaw('MONTH(transaction_date) as month, YEAR(transaction_date) as year, type, SUM(amount) as total')
+            ->whereYear('transaction_date', Carbon::now()->year)
+            ->groupBy('year', 'month', 'type')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->groupBy(['year', 'month']);
+
+        $topCategories = Transaction::where('business_unit_id', $unit->id)
+            ->selectRaw('category, type, COUNT(*) as count, SUM(amount) as total')
+            ->groupBy('category', 'type')
+            ->orderBy('total', 'desc')
+            ->limit(10)
+            ->get();
+
+        $dailyTrend = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $dailyTrend[] = [
+                'date' => $date->format('d/m'),
+                'income' => Transaction::where('business_unit_id', $unit->id)
+                    ->where('type', 'income')
+                    ->whereDate('transaction_date', $date)
+                    ->sum('amount'),
+                'expense' => Transaction::where('business_unit_id', $unit->id)
+                    ->where('type', 'expense')
+                    ->whereDate('transaction_date', $date)
+                    ->sum('amount'),
+            ];
+        }
+
+        // Generate HTML for PDF
+        $html = view('admin.units.report-pdf', compact(
+            'unit',
+            'monthlyData',
+            'topCategories',
+            'dailyTrend'
+        ))->render();
+
+        // Create PDF
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // Download PDF
+        return $dompdf->stream('laporan-unit-' . $unit->name . '-' . date('Y-m-d') . '.pdf');
     }
 }

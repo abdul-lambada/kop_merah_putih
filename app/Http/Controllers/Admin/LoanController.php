@@ -47,17 +47,39 @@ class LoanController extends Controller
         $stats = [
             'total_loans' => SavingsLoan::where('type', 'loan')
                 ->whereIn('status', ['active', 'completed'])->sum('amount'),
+            'active_portfolio' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')->sum('amount'),
             'this_month_loans' => SavingsLoan::where('type', 'loan')
                 ->whereMonth('created_at', Carbon::now()->month)
                 ->sum('amount'),
+            'monthly_loans' => SavingsLoan::where('type', 'loan')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->sum('amount'),
+            'monthly_count' => SavingsLoan::where('type', 'loan')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->count(),
             'pending_loans' => SavingsLoan::where('type', 'loan')
                 ->where('status', 'pending')->count(),
+            'pending_count' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'pending')->count(),
+            'pending_amount' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'pending')->sum('amount'),
             'active_loans' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')->count(),
+            'active_count' => SavingsLoan::where('type', 'loan')
                 ->where('status', 'active')->count(),
             'overdue_loans' => SavingsLoan::where('type', 'loan')
                 ->where('status', 'active')
                 ->where('due_date', '<', Carbon::today())
                 ->count(),
+            'overdue_count' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')
+                ->where('due_date', '<', Carbon::today())
+                ->count(),
+            'overdue_amount' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')
+                ->where('due_date', '<', Carbon::today())
+                ->sum('amount'),
             'total_outstanding' => SavingsLoan::where('type', 'loan')
                 ->where('status', 'active')
                 ->get()

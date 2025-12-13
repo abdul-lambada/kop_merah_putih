@@ -58,15 +58,33 @@ class TransactionController extends Controller
             'total_income' => Transaction::income()
                 ->whereMonth('transaction_date', Carbon::now()->month)
                 ->sum('amount'),
+            'monthly_income' => Transaction::income()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->sum('amount'),
+            'income_count' => Transaction::income()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->count(),
             'total_expense' => Transaction::expense()
                 ->whereMonth('transaction_date', Carbon::now()->month)
                 ->sum('amount'),
+            'monthly_expense' => Transaction::expense()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->sum('amount'),
+            'expense_count' => Transaction::expense()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->count(),
             'monthly_profit' => Transaction::income()
                 ->whereMonth('transaction_date', Carbon::now()->month)
                 ->sum('amount') - Transaction::expense()
                 ->whereMonth('transaction_date', Carbon::now()->month)
                 ->sum('amount'),
+            'net_profit' => Transaction::income()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->sum('amount') - Transaction::expense()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->sum('amount'),
             'total_transactions' => Transaction::whereMonth('transaction_date', Carbon::now()->month)->count(),
+            'monthly_count' => Transaction::whereMonth('transaction_date', Carbon::now()->month)->count(),
         ];
 
         // Categories for filter

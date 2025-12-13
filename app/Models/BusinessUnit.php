@@ -61,6 +61,27 @@ class BusinessUnit extends Model
             ->sum('amount');
     }
 
+    public function getMonthlyExpensesAttribute()
+    {
+        return $this->transactions()
+            ->where('type', 'expense')
+            ->whereMonth('transaction_date', now()->month)
+            ->sum('amount');
+    }
+
+    public function getMonthlyProfitAttribute()
+    {
+        return $this->monthlyRevenue - $this->monthlyExpenses;
+    }
+
+    public function getRoiAttribute()
+    {
+        if ($this->initial_capital <= 0) {
+            return 0;
+        }
+        return (($this->current_balance - $this->initial_capital) / $this->initial_capital) * 100;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

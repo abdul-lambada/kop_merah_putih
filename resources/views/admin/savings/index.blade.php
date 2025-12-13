@@ -165,7 +165,7 @@
                                 @forelse($savings as $saving)
                                     <tr>
                                         <td>
-                                            <span class="badge bg-primary">{{ $saving->savings_loan_number }}</span>
+                                            <span class="badge bg-primary">{{ $saving->transaction_number }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -185,7 +185,7 @@
                                             <span class="text-success fw-bold">+Rp {{ number_format($saving->amount, 0, ',', '.') }}</span>
                                         </td>
                                         <td>
-                                            <small>Rp {{ number_format($saving->member->totalSavings(), 0, ',', '.') }}</small>
+                                            <small>Rp {{ number_format($saving->member->total_savings, 0, ',', '.') }}</small>
                                         </td>
                                         <td>
                                             @if($saving->status == 'completed')

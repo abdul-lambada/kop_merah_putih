@@ -212,67 +212,99 @@ class ReportController extends Controller
 
         // Unit statistics
         $totalUnits = BusinessUnit::count();
-        $activeUnits = BusinessUnit::where('status', 'active')->count();
 
-        // Units by type
-        $unitsByType = BusinessUnit::select('type', DB::raw('count(*) as count'))
-            ->groupBy('type')
-            ->get()
-            ->keyBy('type');
-
-        // Unit performance
-        $unitPerformance = BusinessUnit::with(['transactions' => function($q) use ($startDate, $endDate) {
+        // Calculate totals for all units
+        $allUnits = BusinessUnit::with(['transactions' => function($q) use ($startDate, $endDate) {
                 $q->whereBetween('transaction_date', [$startDate, $endDate]);
             }])
-            ->active()
+            ->get();
+
+        $totalRevenue = $allUnits->sum(function($unit) {
+            return $unit->transactions->where('type', 'income')->sum('amount');
+        });
+
+        $totalExpenses = $allUnits->sum(function($unit) {
+            return $unit->transactions->where('type', 'expense')->sum('amount');
+        });
+
+        $totalProfit = $totalRevenue - $totalExpenses;
+
+        // Units by type with financial data
+        $unitsByType = BusinessUnit::with(['transactions' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('transaction_date', [$startDate, $endDate]);
+            }])
             ->get()
-            ->map(function($unit) use ($startDate, $endDate) {
-                $periodTransactions = $unit->transactions;
-                $allTransactions = $unit->transactions()->get();
-                
+            ->groupBy('type')
+            ->map(function($units, $type) {
+                $revenue = $units->sum(function($unit) {
+                    return $unit->transactions->where('type', 'income')->sum('amount');
+                });
+                $expenses = $units->sum(function($unit) {
+                    return $unit->transactions->where('type', 'expense')->sum('amount');
+                });
                 return [
-                    'unit' => $unit,
-                    'period_revenue' => $periodTransactions->where('type', 'income')->sum('amount'),
-                    'period_expenses' => $periodTransactions->where('type', 'expense')->sum('amount'),
-                    'period_profit' => $periodTransactions->where('type', 'income')->sum('amount') - 
-                                   $periodTransactions->where('type', 'expense')->sum('amount'),
-                    'total_revenue' => $allTransactions->where('type', 'income')->sum('amount'),
-                    'total_expenses' => $allTransactions->where('type', 'expense')->sum('amount'),
-                    'total_profit' => $allTransactions->where('type', 'income')->sum('amount') - 
-                                   $allTransactions->where('type', 'expense')->sum('amount'),
-                    'roi' => $unit->initial_capital > 0 ? 
-                            (($allTransactions->where('type', 'income')->sum('amount') - 
-                              $allTransactions->where('type', 'expense')->sum('amount')) / 
-                             $unit->initial_capital) * 100 : 0,
+                    'type' => $type,
+                    'count' => $units->count(),
+                    'revenue' => $revenue,
+                    'expenses' => $expenses,
+                    'profit' => $revenue - $expenses,
+                ];
+            });
+
+        // Unit details for individual performance table
+        $unitDetails = BusinessUnit::with(['transactions' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('transaction_date', [$startDate, $endDate]);
+            }])
+            ->get()
+            ->map(function($unit) {
+                $revenue = $unit->transactions->where('type', 'income')->sum('amount');
+                $expenses = $unit->transactions->where('type', 'expense')->sum('amount');
+                $unit->revenue = $revenue;
+                $unit->expenses = $expenses;
+                return $unit;
+            });
+
+        // Top performing units
+        $topUnits = $unitDetails
+            ->map(function($unit) {
+                return [
+                    'name' => $unit->name,
+                    'type' => $unit->type,
+                    'location' => $unit->location,
+                    'revenue' => $unit->revenue,
+                    'expenses' => $unit->expenses,
+                    'profit' => $unit->revenue - $unit->expenses,
                 ];
             })
-            ->sortByDesc('period_profit');
+            ->sortByDesc('profit')
+            ->take(5);
 
-        // Best performing units
-        $bestUnits = $unitPerformance->take(5);
+        // Chart data for performance trends
+        $chartData = $this->getUnitsChartData($period, $year, $month);
 
-        // Units by performance category
-        $performanceCategories = [
-            'excellent' => $unitPerformance->filter(fn($u) => $u['roi'] >= 20)->count(),
-            'good' => $unitPerformance->filter(fn($u) => $u['roi'] >= 10 && $u['roi'] < 20)->count(),
-            'average' => $unitPerformance->filter(fn($u) => $u['roi'] >= 0 && $u['roi'] < 10)->count(),
-            'poor' => $unitPerformance->filter(fn($u) => $u['roi'] < 0)->count(),
+        // Unit statistics for sidebar
+        $unitStats = [
+            'average_revenue' => $totalUnits > 0 ? $totalRevenue / $totalUnits : 0,
+            'average_expenses' => $totalUnits > 0 ? $totalExpenses / $totalUnits : 0,
+            'best_unit' => $topUnits->first()['name'] ?? '-',
+            'average_margin' => $totalRevenue > 0 ? ($totalProfit / $totalRevenue) * 100 : 0,
         ];
-
-        // Monthly trend
-        $monthlyTrend = $this->getUnitPerformanceTrend($year);
 
         return view('admin.reports.units', compact(
             'period',
             'year',
             'month',
+            'startDate',
+            'endDate',
             'totalUnits',
-            'activeUnits',
+            'totalRevenue',
+            'totalExpenses',
+            'totalProfit',
             'unitsByType',
-            'unitPerformance',
-            'bestUnits',
-            'performanceCategories',
-            'monthlyTrend'
+            'unitDetails',
+            'topUnits',
+            'chartData',
+            'unitStats'
         ));
     }
 
@@ -501,6 +533,78 @@ class ReportController extends Controller
                                $unit->transactions->where('type', 'expense')->sum('amount'),
                 ];
             });
+    }
+
+    private function getUnitsChartData($period, $year, $month)
+    {
+        if ($period === 'monthly') {
+            // Daily data for the month
+            $data = [];
+            for ($day = 1; $day <= Carbon::create($year, $month)->daysInMonth; $day++) {
+                $date = Carbon::create($year, $month, $day);
+                $dayRevenue = Transaction::income()
+                    ->whereDate('transaction_date', $date)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $dayExpenses = Transaction::expense()
+                    ->whereDate('transaction_date', $date)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $dayProfit = $dayRevenue - $dayExpenses;
+                
+                $data['labels'][] = $day;
+                $data['revenue'][] = $dayRevenue;
+                $data['expenses'][] = $dayExpenses;
+                $data['profit'][] = $dayProfit;
+            }
+        } elseif ($period === 'quarterly') {
+            // Monthly data for the quarter
+            $quarter = ceil($month / 3);
+            $startMonth = ($quarter - 1) * 3 + 1;
+            $data = [];
+            for ($i = 0; $i < 3; $i++) {
+                $currentMonth = $startMonth + $i;
+                $monthRevenue = Transaction::income()
+                    ->whereMonth('transaction_date', $currentMonth)
+                    ->whereYear('transaction_date', $year)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $monthExpenses = Transaction::expense()
+                    ->whereMonth('transaction_date', $currentMonth)
+                    ->whereYear('transaction_date', $year)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $monthProfit = $monthRevenue - $monthExpenses;
+                
+                $data['labels'][] = Carbon::create($year, $currentMonth)->format('M');
+                $data['revenue'][] = $monthRevenue;
+                $data['expenses'][] = $monthExpenses;
+                $data['profit'][] = $monthProfit;
+            }
+        } else {
+            // Monthly data for the year
+            $data = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $monthRevenue = Transaction::income()
+                    ->whereMonth('transaction_date', $i)
+                    ->whereYear('transaction_date', $year)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $monthExpenses = Transaction::expense()
+                    ->whereMonth('transaction_date', $i)
+                    ->whereYear('transaction_date', $year)
+                    ->whereHas('businessUnit')
+                    ->sum('amount');
+                $monthProfit = $monthRevenue - $monthExpenses;
+                
+                $data['labels'][] = Carbon::create($year, $i)->format('M');
+                $data['revenue'][] = $monthRevenue;
+                $data['expenses'][] = $monthExpenses;
+                $data['profit'][] = $monthProfit;
+            }
+        }
+        
+        return $data;
     }
 
     private function getChartsData($startDate, $endDate)

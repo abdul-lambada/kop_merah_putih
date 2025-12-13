@@ -77,4 +77,26 @@ class Transaction extends Model
         $month = $month ?? now()->month;
         return $query->whereMonth('transaction_date', $month);
     }
+
+    /**
+     * Check if transaction can be edited
+     */
+    public function canEdit()
+    {
+        // Can edit if transaction is from current month and not older than 7 days
+        $transactionDate = \Carbon\Carbon::parse($this->transaction_date);
+        $now = \Carbon\Carbon::now();
+        
+        // Allow editing if transaction is from current month
+        if ($transactionDate->month === $now->month && $transactionDate->year === $now->year) {
+            return true;
+        }
+        
+        // Allow editing if transaction is less than 7 days old
+        if ($transactionDate->diffInDays($now) <= 7) {
+            return true;
+        }
+        
+        return false;
+    }
 }

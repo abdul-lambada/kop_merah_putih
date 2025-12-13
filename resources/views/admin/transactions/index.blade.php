@@ -262,11 +262,13 @@
                     
                     <!-- Pagination -->
                     @if($transactions->hasPages())
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mt-3">
+                            <small class="text-muted mb-2 mb-md-0">
                                 Menampilkan {{ $transactions->firstItem() }} - {{ $transactions->lastItem() }} dari {{ $transactions->total() }} data
                             </small>
-                            {{ $transactions->links() }}
+                            <nav aria-label="Page navigation">
+                                {{ $transactions->links('pagination::bootstrap-4') }}
+                            </nav>
                         </div>
                     @endif
                 </div>

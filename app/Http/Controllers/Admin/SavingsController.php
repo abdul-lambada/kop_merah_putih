@@ -51,12 +51,29 @@ class SavingsController extends Controller
                 ->where('status', 'completed')
                 ->whereMonth('created_at', Carbon::now()->month)
                 ->sum('amount'),
+            'monthly_savings' => SavingsLoan::where('type', 'savings')
+                ->where('status', 'completed')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->sum('amount'),
+            'monthly_count' => SavingsLoan::where('type', 'savings')
+                ->where('status', 'completed')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->count(),
             'pending_savings' => SavingsLoan::where('type', 'savings')
                 ->where('status', 'pending')->count(),
+            'pending_count' => SavingsLoan::where('type', 'savings')
+                ->where('status', 'pending')->count(),
+            'pending_amount' => SavingsLoan::where('type', 'savings')
+                ->where('status', 'pending')->sum('amount'),
             'active_members_with_savings' => SavingsLoan::where('type', 'savings')
                 ->where('status', 'completed')
                 ->distinct('member_id')
                 ->count(),
+            'active_members' => SavingsLoan::where('type', 'savings')
+                ->where('status', 'completed')
+                ->distinct('member_id')
+                ->count(),
+            'total_count' => SavingsLoan::where('type', 'savings')->count(),
         ];
 
         return view('admin.savings.index', compact('savings', 'stats'));
@@ -120,7 +137,7 @@ class SavingsController extends Controller
 
     public function show(SavingsLoan $saving)
     {
-        $saving->load(['member', 'transactions']);
+        $saving->load(['member', 'transactions', 'approvedBy']);
 
         return view('admin.savings.show', compact('saving'));
     }

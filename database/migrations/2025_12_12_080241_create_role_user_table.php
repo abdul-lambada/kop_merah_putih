@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->timestamp('assigned_at')->useCurrent();
             $table->foreignId('assigned_by')->nullable()->constrained('users');
+            $table->timestamps();
             
             $table->primary(['user_id', 'role_id']);
         });

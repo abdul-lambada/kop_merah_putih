@@ -21,6 +21,20 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'full_name',
+        'phone',
+        'birth_date',
+        'address',
+        'email_notifications',
+        'theme',
+        'language',
+        'timezone',
+        'notification_email',
+        'notification_push',
+        'notification_sms',
+        'avatar',
+        'member_number',
+        'last_login_at',
     ];
 
     /**
@@ -41,5 +55,45 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'birth_date' => 'date',
+        'last_login_at' => 'datetime',
+        'email_notifications' => 'boolean',
+        'notification_email' => 'boolean',
+        'notification_push' => 'boolean',
+        'notification_sms' => 'boolean',
     ];
+
+    /**
+     * Get the roles associated with the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user')
+            ->withPivot(['assigned_at', 'assigned_by'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if user has a specific role.
+     */
+    public function hasRole($roleSlug)
+    {
+        return $this->roles()->where('slug', $roleSlug)->exists();
+    }
+
+    /**
+     * Check if user has any of the given roles.
+     */
+    public function hasAnyRole($roleSlugs)
+    {
+        return $this->roles()->whereIn('slug', (array) $roleSlugs)->exists();
+    }
+
+    /**
+     * Get the highest level role of the user.
+     */
+    public function getHighestRoleLevel()
+    {
+        return $this->roles()->min('level') ?? 999;
+    }
 }

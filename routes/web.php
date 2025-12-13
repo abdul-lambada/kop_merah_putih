@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +66,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/report', [App\Http\Controllers\Admin\LoanController::class, 'report'])->name('report');
     });
     
+    // Savings & Loans Management - combined routes
+    Route::prefix('savings-loans')->name('savings-loans.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SavingsLoanController::class, 'index'])->name('index');
+        Route::get('/{savingsLoan}', [App\Http\Controllers\Admin\SavingsLoanController::class, 'show'])->name('show');
+    });
+    
     // Business Units - requires unit manager or admin roles
     Route::prefix('units')->name('units.')->middleware('role:super-admin,ketua-koperasi,manager-unit')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\BusinessUnitController::class, 'index'])->name('index');
@@ -73,7 +82,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::put('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'update'])->name('update');
         Route::delete('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'destroy'])->name('destroy');
         Route::post('/{unit}/transaction', [App\Http\Controllers\Admin\BusinessUnitController::class, 'transaction'])->name('transaction');
+        Route::get('/{unit}/transaction', function() {
+            return redirect()->back()->with('error', 'Akses transaksi hanya melalui form submission');
+        });
         Route::get('/{unit}/report', [App\Http\Controllers\Admin\BusinessUnitController::class, 'report'])->name('report');
+        Route::get('/{unit}/report/pdf', [App\Http\Controllers\Admin\BusinessUnitController::class, 'reportPDF'])->name('report.pdf');
         
         // Specific unit types
         Route::get('/type/sembako', [App\Http\Controllers\Admin\BusinessUnitController::class, 'sembako'])->name('sembako');
@@ -87,13 +100,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [App\Http\Controllers\Admin\TransactionController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Admin\TransactionController::class, 'create'])->name('create');
         Route::post('/', [App\Http\Controllers\Admin\TransactionController::class, 'store'])->name('store');
+        Route::get('/daily', [App\Http\Controllers\Admin\TransactionController::class, 'daily'])->name('daily');
+        Route::get('/monthly', [App\Http\Controllers\Admin\TransactionController::class, 'monthly'])->name('monthly');
+        Route::post('/export', [App\Http\Controllers\Admin\TransactionController::class, 'export'])->name('export');
         Route::get('/{transaction}', [App\Http\Controllers\Admin\TransactionController::class, 'show'])->name('show');
         Route::get('/{transaction}/edit', [App\Http\Controllers\Admin\TransactionController::class, 'edit'])->name('edit');
         Route::put('/{transaction}', [App\Http\Controllers\Admin\TransactionController::class, 'update'])->name('update');
         Route::delete('/{transaction}', [App\Http\Controllers\Admin\TransactionController::class, 'destroy'])->name('destroy');
-        Route::get('/daily', [App\Http\Controllers\Admin\TransactionController::class, 'daily'])->name('daily');
-        Route::get('/monthly', [App\Http\Controllers\Admin\TransactionController::class, 'monthly'])->name('monthly');
-        Route::post('/export', [App\Http\Controllers\Admin\TransactionController::class, 'export'])->name('export');
     });
     
     // Reports - accessible to management roles
@@ -112,24 +125,196 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/profile', function () {
             return view('admin.settings.profile');
         })->name('profile');
+        
         Route::get('/system', function () {
             return view('admin.settings.system');
         })->name('system');
+        
+        // Profile update routes
+        Route::put('/profile', function (Illuminate\Http\Request $request) {
+            // Update user profile logic
+            /** @var User $user */
+            $user = auth()->user();
+            $validated = $request->validate([
+                'full_name' => 'nullable|string|max:255',
+                'email' => 'required|email|unique:users,email,' . $user->id,
+                'phone' => 'nullable|string|max:20',
+                'birth_date' => 'nullable|date',
+                'address' => 'nullable|string|max:500',
+                'email_notifications' => 'boolean',
+            ]);
+            
+            $user->full_name = $validated['full_name'] ?? $user->full_name;
+            $user->email = $validated['email'];
+            $user->phone = $validated['phone'] ?? $user->phone;
+            $user->birth_date = $validated['birth_date'] ?? $user->birth_date;
+            $user->address = $validated['address'] ?? $user->address;
+            $user->email_notifications = $validated['email_notifications'] ?? $user->email_notifications;
+            $user->save();
+            
+            return back()->with('success', 'Profil berhasil diperbarui');
+        })->name('profile.update');
+        
+        Route::put('/password', function (Illuminate\Http\Request $request) {
+            // Update password logic
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+            
+            if (!Hash::check($validated['current_password'], auth()->user()->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai']);
+            }
+            
+            /** @var User $user */
+            $user = auth()->user();
+            $user->password = Hash::make($validated['password']);
+            $user->save();
+            
+            return back()->with('success', 'Password berhasil diperbarui');
+        })->name('password.update');
+        
+        Route::put('/preferences', function (Illuminate\Http\Request $request) {
+            // Update user preferences logic
+            $validated = $request->validate([
+                'theme' => 'required|in:light,dark',
+                'language' => 'required|in:id,en',
+                'timezone' => 'required|string',
+                'notification_email' => 'boolean',
+                'notification_push' => 'boolean',
+                'notification_sms' => 'boolean',
+            ]);
+            
+            /** @var User $user */
+            $user = auth()->user();
+            $user->theme = $validated['theme'];
+            $user->language = $validated['language'];
+            $user->timezone = $validated['timezone'];
+            $user->notification_email = $request->has('notification_email');
+            $user->notification_push = $request->has('notification_push');
+            $user->notification_sms = $request->has('notification_sms');
+            $user->save();
+            
+            return back()->with('success', 'Preferensi berhasil diperbarui');
+        })->name('preferences.update');
+        
+        Route::post('/avatar', function (Illuminate\Http\Request $request) {
+            // Update avatar logic
+            $validated = $request->validate([
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+            
+            $avatar = $request->file('avatar');
+            $avatarName = time() . '.' . $avatar->getClientOriginalExtension();
+            $avatar->move(public_path('avatars'), $avatarName);
+            
+            /** @var User $user */
+            $user = auth()->user();
+            $user->avatar = $avatarName;
+            $user->save();
+            
+            return back()->with('success', 'Foto profil berhasil diperbarui');
+        })->name('avatar.update');
+        
+        // System settings routes
+        Route::put('/system/general', function (Illuminate\Http\Request $request) {
+            // Update system general settings logic
+            $validated = $request->validate([
+                'app_name' => 'required|string|max:255',
+                'app_url' => 'required|url',
+                'timezone' => 'required|string',
+                'locale' => 'required|string',
+                'debug_mode' => 'boolean',
+                'maintenance_mode' => 'boolean',
+            ]);
+            
+            // Update .env file or settings table
+            // This is a placeholder - implement actual settings storage
+            
+            return back()->with('success', 'Pengaturan umum sistem berhasil diperbarui');
+        })->name('system.general.update');
+        
+        Route::put('/system/email', function (Illuminate\Http\Request $request) {
+            // Update email settings logic
+            $validated = $request->validate([
+                'mail_driver' => 'required|string',
+                'mail_host' => 'required|string',
+                'mail_port' => 'required|integer',
+                'mail_username' => 'nullable|string',
+                'mail_password' => 'nullable|string',
+                'mail_encryption' => 'nullable|string',
+                'mail_from_address' => 'required|email',
+                'mail_from_name' => 'required|string',
+            ]);
+            
+            // Update mail configuration
+            // This is a placeholder - implement actual settings storage
+            
+            return back()->with('success', 'Pengaturan email berhasil diperbarui');
+        })->name('system.email.update');
+        
+        Route::put('/system/backup/schedule', function (Illuminate\Http\Request $request) {
+            // Update backup schedule logic
+            $validated = $request->validate([
+                'backup_frequency' => 'required|string',
+                'backup_time' => 'required|string',
+                'auto_backup' => 'boolean',
+            ]);
+            
+            // Update backup schedule
+            // This is a placeholder - implement actual backup scheduling
+            
+            return back()->with('success', 'Jadwal backup berhasil diperbarui');
+        })->name('system.backup.schedule');
     });
 });
 
-// Auth routes
+// Standard Laravel auth routes
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::post('/login', function (Illuminate\Http\Request $request) {
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    // Debug: Log the attempt
+    // \Log::info('Login attempt for: ' . $credentials['email']);
+    
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
+        // \Log::info('Login successful for: ' . $credentials['email']);
+        return redirect()->intended(route('admin.dashboard'));
+    }
+
+    // \Log::info('Login failed for: ' . $credentials['email']);
+    return back()->withErrors([
+        'email' => 'The provided credentials do not match our records.',
+    ]);
+});
+
+Route::post('/logout', function (Illuminate\Http\Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect()->route('login');
+})->name('logout');
+
+// Additional auth routes with prefix
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('/login', function () {
-        return view('auth.login');
+        return redirect()->route('login');
     })->name('login');
+    
     Route::post('/login', function () {
         // TODO: Implement login logic
         return redirect()->route('admin.dashboard');
     });
     Route::post('/logout', function () {
         // TODO: Implement logout logic
-        return redirect()->route('auth.login');
+        return redirect()->route('login');
     })->name('logout');
     
     // Registration
@@ -138,7 +323,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
     })->name('register');
     Route::post('/register', function () {
         // TODO: Implement registration logic
-        return redirect()->route('auth.login');
+        return redirect()->route('login');
     });
     
     // Password reset
@@ -154,6 +339,6 @@ Route::prefix('auth')->name('auth.')->group(function () {
     })->name('password.reset');
     Route::post('/password/reset', function () {
         // TODO: Implement password reset logic
-        return redirect()->route('auth.login');
+        return redirect()->route('login');
     })->name('password.update');
 });

@@ -22,6 +22,19 @@ class DashboardController extends Controller
         $lastMonth = Carbon::now()->subMonth()->startOfMonth();
         $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
 
+        // Calculate savings growth
+        $lastMonthSavings = SavingsLoan::where('type', 'savings')
+            ->where('status', 'completed')
+            ->whereMonth('created_at', Carbon::now()->subMonth()->month)
+            ->whereYear('created_at', Carbon::now()->subMonth()->year)
+            ->sum('amount');
+        
+        $thisMonthSavings = SavingsLoan::where('type', 'savings')
+            ->where('status', 'completed')
+            ->whereMonth('created_at', Carbon::now()->month)
+            ->whereYear('created_at', Carbon::now()->year)
+            ->sum('amount');
+
         // Statistics
         $stats = [
             'total_members' => Member::where('status', 'active')->count(),
@@ -29,13 +42,23 @@ class DashboardController extends Controller
                 ->whereYear('join_date', Carbon::now()->year)->count(),
             'total_savings' => SavingsLoan::where('type', 'savings')
                 ->where('status', 'completed')->sum('amount'),
+            'savings_growth' => $thisMonthSavings - $lastMonthSavings,
             'total_loans' => SavingsLoan::where('type', 'loan')
                 ->whereIn('status', ['active', 'completed'])->sum('amount'),
+            'active_loan_portfolio' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')->sum('amount'),
+            'overdue_loans' => SavingsLoan::where('type', 'loan')
+                ->where('status', 'active')
+                ->where('due_date', '<', Carbon::now())->count(),
             'monthly_income' => Transaction::income()
                 ->whereMonth('transaction_date', Carbon::now()->month)
                 ->sum('amount'),
             'monthly_expense' => Transaction::expense()
                 ->whereMonth('transaction_date', Carbon::now()->month)
+                ->sum('amount'),
+            'monthly_unit_revenue' => Transaction::income()
+                ->whereMonth('transaction_date', Carbon::now()->month)
+                ->whereHas('businessUnit')
                 ->sum('amount'),
             'active_units' => BusinessUnit::where('status', 'active')->count(),
             'pending_loans' => SavingsLoan::where('type', 'loan')
@@ -63,9 +86,15 @@ class DashboardController extends Controller
             ->active()
             ->get()
             ->map(function ($unit) {
-                return [
+                $monthlyRevenue = $unit->transactions()
+                    ->where('type', 'income')
+                    ->whereMonth('transaction_date', Carbon::now()->month)
+                    ->sum('amount');
+                    
+                return (object)[
                     'name' => $unit->name,
                     'type' => $unit->type,
+                    'monthly_revenue' => $monthlyRevenue,
                     'revenue' => $unit->revenue,
                     'expenses' => $unit->expenses,
                     'profit' => $unit->profit,
@@ -73,20 +102,18 @@ class DashboardController extends Controller
             });
 
         // Monthly chart data (last 6 months)
-        $monthlyData = [];
+        $monthlyChart = [
+            'labels' => [],
+            'data' => []
+        ];
+        
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $monthlyData[] = [
-                'month' => $month->format('M'),
-                'income' => Transaction::income()
-                    ->whereMonth('transaction_date', $month->month)
-                    ->whereYear('transaction_date', $month->year)
-                    ->sum('amount'),
-                'expense' => Transaction::expense()
-                    ->whereMonth('transaction_date', $month->month)
-                    ->whereYear('transaction_date', $month->year)
-                    ->sum('amount'),
-            ];
+            $monthlyChart['labels'][] = $month->format('M Y');
+            $monthlyChart['data'][] = Transaction::income()
+                ->whereMonth('transaction_date', $month->month)
+                ->whereYear('transaction_date', $month->year)
+                ->sum('amount');
         }
 
         // Business sector distribution
@@ -100,7 +127,7 @@ class DashboardController extends Controller
             'recentTransactions',
             'pendingLoans',
             'unitPerformance',
-            'monthlyData',
+            'monthlyChart',
             'sectorDistribution'
         ));
     }
