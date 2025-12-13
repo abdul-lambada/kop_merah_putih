@@ -224,7 +224,7 @@
                             <small class="text-muted">
                                 Menampilkan {{ $reports->firstItem() }} - {{ $reports->lastItem() }} dari {{ $reports->total() }} data
                             </small>
-                            {{ $reports->links() }}
+                            {{ $reports->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>

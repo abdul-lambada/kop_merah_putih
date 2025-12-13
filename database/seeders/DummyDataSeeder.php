@@ -30,13 +30,10 @@ class DummyDataSeeder extends Seeder
             ]
         );
         
-        // Assign super-admin role to admin user
-        $adminRole = \App\Models\Role::where('slug', 'super-admin')->first();
-        if ($adminRole && !$admin->hasRole('super-admin')) {
-            $admin->roles()->attach($adminRole->id, [
-                'assigned_at' => now(),
-                'assigned_by' => $admin->id,
-            ]);
+        // Assign super-admin role to admin user using Spatie Permission
+        $adminRole = \Spatie\Permission\Models\Role::where('name', 'Super Admin')->first();
+        if ($adminRole && !$admin->hasRole('Super Admin')) {
+            $admin->assignRole($adminRole);
         }
 
         // Indonesian names for members

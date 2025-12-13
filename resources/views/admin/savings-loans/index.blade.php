@@ -83,7 +83,7 @@
                         <div>
                             Menampilkan {{ $savingsLoans->firstItem() }} - {{ $savingsLoans->lastItem() }} dari {{ $savingsLoans->total() }} data
                         </div>
-                        {{ $savingsLoans->links() }}
+                        {{ $savingsLoans->links('pagination.sneat') }}
                     </div>
                 </div>
             </div>

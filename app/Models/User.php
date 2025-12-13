@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -35,6 +36,7 @@ class User extends Authenticatable
         'avatar',
         'member_number',
         'last_login_at',
+        'status',
     ];
 
     /**
@@ -66,34 +68,34 @@ class User extends Authenticatable
     /**
      * Get the roles associated with the user.
      */
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'role_user')
-            ->withPivot(['assigned_at', 'assigned_by'])
-            ->withTimestamps();
-    }
+    // public function roles()
+    // {
+    //     return $this->belongsToMany(Role::class, 'role_user')
+    //         ->withPivot(['assigned_at', 'assigned_by'])
+    //         ->withTimestamps();
+    // }
 
-    /**
-     * Check if user has a specific role.
-     */
-    public function hasRole($roleSlug)
-    {
-        return $this->roles()->where('slug', $roleSlug)->exists();
-    }
+    // /**
+    //  * Check if user has a specific role.
+    //  */
+    // public function hasRole($roleSlug)
+    // {
+    //     return $this->roles()->where('slug', $roleSlug)->exists();
+    // }
 
-    /**
-     * Check if user has any of the given roles.
-     */
-    public function hasAnyRole($roleSlugs)
-    {
-        return $this->roles()->whereIn('slug', (array) $roleSlugs)->exists();
-    }
+    // /**
+    //  * Check if user has any of the given roles.
+    //  */
+    // public function hasAnyRole($roleSlugs)
+    // {
+    //     return $this->roles()->whereIn('slug', (array) $roleSlugs)->exists();
+    // }
 
-    /**
-     * Get the highest level role of the user.
-     */
-    public function getHighestRoleLevel()
-    {
-        return $this->roles()->min('level') ?? 999;
-    }
+    // /**
+    //  * Get the highest level role of the user.
+    //  */
+    // public function getHighestRoleLevel()
+    // {
+    //     return $this->roles()->min('level') ?? 999;
+    // }
 }

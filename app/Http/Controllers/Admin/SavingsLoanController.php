@@ -8,6 +8,11 @@ use App\Models\SavingsLoan;
 
 class SavingsLoanController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:savings.view')->only(['index', 'show']);
+        $this->middleware('permission:loans.view')->only(['index', 'show']);
+    }
     public function index()
     {
         $savingsLoans = SavingsLoan::with(['member', 'approvedBy'])

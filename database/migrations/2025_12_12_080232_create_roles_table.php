@@ -12,14 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->json('permissions')->nullable();
-            $table->integer('level')->default(0); // Higher number = higher privilege
-            $table->boolean('is_active')->default(true);
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('guard_name')->default('web');
             $table->timestamps();
+            
+            $table->unique(['name', 'guard_name']);
         });
     }
 

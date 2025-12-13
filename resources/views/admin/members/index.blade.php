@@ -11,6 +11,23 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Manajemen Anggota</h5>
                     <div class="d-flex gap-2">
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="ti ti-printer me-1"></i> Cetak
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="{{ route('admin.members.print') }}" target="_blank" class="dropdown-item">
+                                        <i class="ti ti-printer me-1"></i> Cetak Data
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.members.pdf') }}" class="dropdown-item">
+                                        <i class="ti ti-file-text me-1"></i> Download PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="{{ route('admin.members.create') }}" class="btn btn-primary">
                             <i class="ti ti-plus me-1"></i> Tambah Anggota
                         </a>
@@ -205,7 +222,7 @@
                             <small class="text-muted">
                                 Menampilkan {{ $members->firstItem() }} - {{ $members->lastItem() }} dari {{ $members->total() }} data
                             </small>
-                            {{ $members->links() }}
+                            {{ $members->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>

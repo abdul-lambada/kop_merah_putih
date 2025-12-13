@@ -31,6 +31,21 @@
 
     <!-- Template Customizer JS -->
     <script src="{{ asset('sneat-1.0.0/assets/js/config.js') }}"></script>
+    
+    <!-- Custom CSS for footer positioning -->
+    <style>
+        .content-footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 1000 !important;
+        }
+        .layout-page {
+            padding-bottom: 60px !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -47,7 +62,6 @@
                                 <text x="16" y="22" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">KM</text>
                             </svg>
                         </span>
-                        <span class="app-brand-text demo menu-text fw-bolder ms-2">Koperasi Merah Putih</span>
                     </a>
                     <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
                         <i class="bx bx-chevron-left bx-sm align-middle"></i>
@@ -58,54 +72,69 @@
 
                 <ul class="menu-inner py-1">
                     <!-- Dashboard -->
+                    @can('dashboard.view')
                     <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <a href="{{ route('admin.dashboard') }}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-home-circle"></i>
                             <div>Dashboard</div>
                         </a>
                     </li>
+                    @endcan
 
                     <!-- Manajemen Anggota -->
+                    @canany(['members.view', 'members.create', 'members.edit'])
                     <li class="menu-item">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bx-group"></i>
                             <div>Manajemen Anggota</div>
                         </a>
                         <ul class="menu-sub">
+                            @can('members.view')
                             <li class="menu-item {{ request()->routeIs('admin.members.*') ? 'active' : '' }}">
                                 <a href="{{ route('admin.members.index') }}" class="menu-link">
                                     <div>Data Anggota</div>
                                 </a>
                             </li>
+                            @endcan
+                            @can('members.create')
                             <li class="menu-item {{ request()->routeIs('admin.members.register') ? 'active' : '' }}">
                                 <a href="{{ route('admin.members.register') }}" class="menu-link">
                                     <div>Pendaftaran</div>
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcan
 
                     <!-- Simpan Pinjam -->
+                    @canany(['savings.view', 'savings.create', 'loans.view', 'loans.create'])
                     <li class="menu-item">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bx-dollar"></i>
                             <div>Simpan Pinjam</div>
                         </a>
                         <ul class="menu-sub">
+                            @can('savings.view')
                             <li class="menu-item {{ request()->routeIs('admin.savings.index') ? 'active' : '' }}">
                                 <a href="{{ route('admin.savings.index') }}" class="menu-link">
                                     <div>Simpanan</div>
                                 </a>
                             </li>
+                            @endcan
+                            @can('loans.view')
                             <li class="menu-item {{ request()->routeIs('admin.loans.index') ? 'active' : '' }}">
                                 <a href="{{ route('admin.loans.index') }}" class="menu-link">
                                     <div>Pinjaman</div>
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcan
 
                     <!-- Unit Usaha -->
+                    @can('units.view')
                     <li class="menu-item">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bx-store"></i>
@@ -139,59 +168,97 @@
                             </li>
                         </ul>
                     </li>
+                    @endcan
 
                     <!-- Transaksi -->
+                    @can('transactions.view')
                     <li class="menu-item {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}">
                         <a href="{{ route('admin.transactions.index') }}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-receipt"></i>
                             <div>Transaksi</div>
                         </a>
                     </li>
+                    @endcan
 
                     <!-- Laporan -->
+                    @canany(['reports.view', 'reports.financial', 'reports.members', 'reports.units'])
                     <li class="menu-item">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bx-file"></i>
                             <div>Laporan</div>
                         </a>
                         <ul class="menu-sub">
+                            @can('reports.financial')
                             <li class="menu-item {{ request()->routeIs('admin.reports.financial') ? 'active' : '' }}">
                                 <a href="{{ route('admin.reports.financial') }}" class="menu-link">
                                     <div>Keuangan</div>
                                 </a>
                             </li>
+                            @endcan
+                            @can('reports.members')
                             <li class="menu-item {{ request()->routeIs('admin.reports.members') ? 'active' : '' }}">
                                 <a href="{{ route('admin.reports.members') }}" class="menu-link">
                                     <div>Anggota</div>
                                 </a>
                             </li>
+                            @endcan
+                            @can('reports.units')
                             <li class="menu-item {{ request()->routeIs('admin.reports.units') ? 'active' : '' }}">
                                 <a href="{{ route('admin.reports.units') }}" class="menu-link">
                                     <div>Unit Usaha</div>
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcan
 
                     <!-- Pengaturan -->
+                    @canany(['permissions.view', 'roles.view', 'users.view', 'profile.view', 'settings.view'])
                     <li class="menu-item">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bx-cog"></i>
                             <div>Pengaturan</div>
                         </a>
                         <ul class="menu-sub">
+                            @can('permissions.view')
+                            <li class="menu-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.permissions.index') }}" class="menu-link">
+                                    <div>Permissions</div>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('roles.view')
+                            <li class="menu-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.roles.index') }}" class="menu-link">
+                                    <div>Roles</div>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('users.view')
+                            <li class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.users.index') }}" class="menu-link">
+                                    <div>Users</div>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('profile.view')
                             <li class="menu-item {{ request()->routeIs('admin.settings.profile') ? 'active' : '' }}">
                                 <a href="{{ route('admin.settings.profile') }}" class="menu-link">
                                     <div>Profil</div>
                                 </a>
                             </li>
+                            @endcan
+                            @can('settings.view')
                             <li class="menu-item {{ request()->routeIs('admin.settings.system') ? 'active' : '' }}">
                                 <a href="{{ route('admin.settings.system') }}" class="menu-link">
                                     <div>Sistem</div>
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcan
 
                     <!-- Kembali ke Landing -->
                     <li class="menu-item">
@@ -288,24 +355,23 @@
                     <div class="container-xxl flex-grow-1 container-p-y">
                         @yield('content')
                     </div>
-
-                    <!-- Footer -->
-                    <footer class="content-footer footer bg-footer-theme">
-                        <div class="container-xxl d-flex flex-wrap justify-content-between py-4 flex-md-row flex-column">
-                            <div class="mb-2 mb-md-0">
-                                © {{ date('Y') }} Koperasi Merah Putih Desa
-                            </div>
-                            <div>
-                                <a href="#" class="footer-link fw-bolder">Bantuan</a>
-                                <a href="#" class="footer-link fw-bolder">Kebijakan Privasi</a>
-                            </div>
-                        </div>
-                    </footer>
-                    <!-- / Footer -->
-
-                    <div class="content-backdrop fade"></div>
                 </div>
-                <!-- / Content wrapper -->
+
+                <!-- Footer -->
+                <footer class="content-footer footer bg-footer-theme">
+                    <div class="container-xxl d-flex flex-wrap justify-content-between py-4 flex-md-row flex-column">
+                        <div class="mb-2 mb-md-0">
+                            {{ date('Y') }} Koperasi Merah Putih Desa
+                        </div>
+                        <div>
+                            <a href="#" class="footer-link fw-bolder">Bantuan</a>
+                            <a href="#" class="footer-link fw-bolder">Kebijakan Privasi</a>
+                        </div>
+                    </div>
+                </footer>
+                <!-- / Footer -->
+
+                <div class="content-backdrop fade"></div>
             </div>
             <!-- / Layout page -->
         </div>

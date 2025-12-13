@@ -276,12 +276,12 @@
                             <small class="text-muted">
                                 Menampilkan {{ $units->firstItem() }} - {{ $units->lastItem() }} dari {{ $units->total() }} data
                             </small>
-                            {{ $units->links() }}
+                            {{ $units->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>
             </div>
-        </div>
+        </div> 
     </div>
 
     <!-- Unit Type Quick Access -->

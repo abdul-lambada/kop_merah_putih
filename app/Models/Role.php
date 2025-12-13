@@ -2,51 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Role extends Model
+class Role extends SpatieRole
 {
-    use HasFactory;
-
+    // This extends Spatie's Role model to maintain compatibility
+    // while allowing for any custom methods if needed
+    
     protected $fillable = [
         'name',
-        'slug',
-        'description',
-        'permissions',
-        'level',
-        'is_active',
+        'guard_name',
     ];
 
-    protected $casts = [
-        'permissions' => 'array',
-        'is_active' => 'boolean',
-    ];
-
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'role_user')
-            ->withPivot(['assigned_at', 'assigned_by'])
-            ->withTimestamps();
-    }
-
-    public function hasPermission($permission)
-    {
-        return in_array($permission, $this->permissions ?? []);
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeByLevel($query, $minLevel = 0)
-    {
-        return $query->where('level', '>=', $minLevel);
-    }
-
-    public function getPermissionListAttribute()
-    {
-        return implode(', ', array_keys($this->permissions ?? []));
-    }
+    // Add any custom methods here if needed
 }

@@ -3,6 +3,10 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -26,5 +30,35 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     */
+    public function render($request, Throwable $exception)
+    {
+        if ($exception instanceof AuthorizationException) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'You do not have permission to perform this action.',
+                    'error' => 'permission_denied'
+                ], 403);
+            }
+            
+            return response()->view('errors.permission-denied', [], 403);
+        }
+
+        if ($exception instanceof AuthenticationException) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                    'error' => 'unauthenticated'
+                ], 401);
+            }
+            
+            return redirect()->guest(route('login'));
+        }
+
+        return parent::render($request, $exception);
     }
 }

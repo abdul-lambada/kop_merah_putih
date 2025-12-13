@@ -8,9 +8,17 @@ use App\Models\Member;
 use App\Models\SavingsLoan;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class MemberController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:members.view')->only(['index', 'show', 'print', 'pdf']);
+        $this->middleware('permission:members.create')->only(['create', 'store', 'register']);
+        $this->middleware('permission:members.edit')->only(['edit', 'update']);
+        $this->middleware('permission:members.delete')->only(['destroy']);
+    }
     public function index(Request $request)
     {
         $query = Member::with(['savingsLoans' => function($q) {
@@ -133,7 +141,7 @@ class MemberController extends Controller
     {
         // Check if member has active loans
         $activeLoans = $member->activeLoans;
-        if ($activeLoans->count() > 0) {
+        if ($activeLoans && $activeLoans->count() > 0) {
             return redirect()
                 ->route('admin.members.show', $member)
                 ->with('error', 'Tidak dapat menghapus anggota yang masih memiliki pinjaman aktif');
@@ -183,5 +191,44 @@ class MemberController extends Controller
         return redirect()
             ->route('admin.members.show', $member)
             ->with('success', 'Status anggota berhasil diperbarui');
+    }
+
+    public function print()
+    {
+        $members = Member::with(['user', 'verificationData'])
+            ->when(request('status'), function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->when(request('search'), function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('full_name', 'like', "%{$search}%")
+                      ->orWhere('member_number', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.members.print', compact('members'));
+    }
+
+    public function pdf()
+    {
+        $members = Member::with(['user', 'verificationData'])
+            ->when(request('status'), function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->when(request('search'), function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('full_name', 'like', "%{$search}%")
+                      ->orWhere('member_number', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $pdf = PDF::loadView('admin.members.pdf', compact('members'));
+        return $pdf->download('members-' . date('Y-m-d') . '.pdf');
     }
 }

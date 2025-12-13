@@ -14,6 +14,16 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:reports.view')->only(['index']);
+        $this->middleware('permission:reports.financial')->only(['financial']);
+        $this->middleware('permission:reports.members')->only(['members']);
+        $this->middleware('permission:reports.units')->only(['units']);
+        $this->middleware('permission:reports.generate')->only(['generate']);
+        $this->middleware('permission:reports.export')->only(['export']);
+        $this->middleware('permission:reports.personal')->only(['personal']);
+    }
     public function financial(Request $request)
     {
         $period = $request->period ?? 'monthly';
@@ -157,8 +167,8 @@ class ReportController extends Controller
             ->map(function($member) {
                 return [
                     'member' => $member,
-                    'total_savings' => $member->savingsLoans->sum('amount'),
-                    'loan_count' => $member->savingsLoans->where('type', 'loan')->count(),
+                    'total_savings' => $member->savingsLoans ? $member->savingsLoans->sum('amount') : 0,
+                    'loan_count' => $member->savingsLoans ? $member->savingsLoans->where('type', 'loan')->count() : 0,
                 ];
             })
             ->sortByDesc('total_savings')
@@ -171,7 +181,7 @@ class ReportController extends Controller
             ->where('status', 'active')
             ->get()
             ->filter(function($member) {
-                return $member->savingsLoans->count() > 0;
+                return $member->savingsLoans && $member->savingsLoans->count() > 0;
             });
 
         return view('admin.reports.members', compact(

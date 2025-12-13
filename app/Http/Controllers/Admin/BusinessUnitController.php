@@ -12,6 +12,15 @@ use Dompdf\Dompdf;
 
 class BusinessUnitController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:units.view')->only(['index', 'show']);
+        $this->middleware('permission:units.create')->only(['create', 'store']);
+        $this->middleware('permission:units.edit')->only(['edit', 'update']);
+        $this->middleware('permission:units.delete')->only(['destroy']);
+        $this->middleware('permission:units.report')->only(['report']);
+        $this->middleware('permission:units.transaction')->only(['transaction']);
+    }
     public function index(Request $request)
     {
         $query = BusinessUnit::with(['transactions' => function($q) {

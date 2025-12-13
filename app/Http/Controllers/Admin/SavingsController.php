@@ -7,11 +7,21 @@ use Illuminate\Http\Request;
 use App\Models\SavingsLoan;
 use App\Models\Member;
 use App\Models\Transaction;
+use App\Models\BusinessUnit;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class SavingsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:savings.view')->only(['index', 'show']);
+        $this->middleware('permission:savings.create')->only(['create', 'store']);
+        $this->middleware('permission:savings.edit')->only(['edit', 'update']);
+        $this->middleware('permission:savings.approve')->only(['approve', 'reject']);
+        $this->middleware('permission:savings.withdraw')->only(['withdraw']);
+    }
+
     public function index(Request $request)
     {
         $query = SavingsLoan::with('member')
@@ -85,7 +95,11 @@ class SavingsController extends Controller
             ->orderBy('full_name')
             ->get();
 
-        return view('admin.savings.create', compact('members'));
+        $businessUnits = BusinessUnit::where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.savings.create', compact('members', 'businessUnits'));
     }
 
     public function store(Request $request)

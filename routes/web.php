@@ -23,83 +23,109 @@ Route::get('/', function () {
 
 // Admin routes group
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
-    
+
     // Dashboard - accessible to all authenticated users with any role
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])
-        ->middleware('role:super-admin,ketua-koperasi,manager-keuangan,manager-unit,staff-administrasi,bendahara-unit,anggota')
+        ->middleware('permission:dashboard.view')
         ->name('dashboard');
-    
+
     // Member Management - requires admin or staff roles
-    Route::prefix('members')->name('members.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan,staff-administrasi')->group(function () {
+    Route::prefix('members')->name('members.')->middleware('permission:members.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\MemberController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\MemberController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\MemberController::class, 'store'])->name('store');
-        Route::get('/register', [App\Http\Controllers\Admin\MemberController::class, 'register'])->name('register');
+        Route::get('/print', [App\Http\Controllers\Admin\MemberController::class, 'print'])->name('print');
+        Route::get('/pdf', [App\Http\Controllers\Admin\MemberController::class, 'pdf'])->name('pdf');
+        Route::middleware('permission:members.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\MemberController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\MemberController::class, 'store'])->name('store');
+            Route::get('/register', [App\Http\Controllers\Admin\MemberController::class, 'register'])->name('register');
+        });
         Route::get('/{member}', [App\Http\Controllers\Admin\MemberController::class, 'show'])->name('show');
-        Route::get('/{member}/edit', [App\Http\Controllers\Admin\MemberController::class, 'edit'])->name('edit');
-        Route::put('/{member}', [App\Http\Controllers\Admin\MemberController::class, 'update'])->name('update');
-        Route::delete('/{member}', [App\Http\Controllers\Admin\MemberController::class, 'destroy'])->name('destroy');
-        Route::post('/{member}/verify', [App\Http\Controllers\Admin\MemberController::class, 'verify'])->name('verify');
-        Route::put('/{member}/status', [App\Http\Controllers\Admin\MemberController::class, 'updateStatus'])->name('update-status');
+        Route::middleware('permission:members.edit')->group(function () {
+            Route::get('/{member}/edit', [App\Http\Controllers\Admin\MemberController::class, 'edit'])->name('edit');
+            Route::put('/{member}', [App\Http\Controllers\Admin\MemberController::class, 'update'])->name('update');
+            Route::post('/{member}/verify', [App\Http\Controllers\Admin\MemberController::class, 'verify'])->name('verify');
+            Route::put('/{member}/status', [App\Http\Controllers\Admin\MemberController::class, 'updateStatus'])->name('update-status');
+        });
+        Route::middleware('permission:members.delete')->group(function () {
+            Route::delete('/{member}', [App\Http\Controllers\Admin\MemberController::class, 'destroy'])->name('destroy');
+        });
     });
-    
-    // Savings Management - requires finance or admin roles
-    Route::prefix('savings')->name('savings.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan')->group(function () {
+
+    // Savings Management - requires finance permissions
+    Route::prefix('savings')->name('savings.')->middleware('permission:savings.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\SavingsController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\SavingsController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\SavingsController::class, 'store'])->name('store');
+        Route::get('/print', [App\Http\Controllers\Admin\SavingsController::class, 'print'])->name('print');
+        Route::get('/pdf', [App\Http\Controllers\Admin\SavingsController::class, 'pdf'])->name('pdf');
+        Route::middleware('permission:savings.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\SavingsController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\SavingsController::class, 'store'])->name('store');
+        });
         Route::get('/{saving}', [App\Http\Controllers\Admin\SavingsController::class, 'show'])->name('show');
-        Route::post('/{saving}/approve', [App\Http\Controllers\Admin\SavingsController::class, 'approve'])->name('approve');
-        Route::post('/{saving}/withdraw', [App\Http\Controllers\Admin\SavingsController::class, 'withdraw'])->name('withdraw');
+        Route::middleware('permission:savings.approve')->group(function () {
+            Route::post('/{saving}/approve', [App\Http\Controllers\Admin\SavingsController::class, 'approve'])->name('approve');
+            Route::post('/{saving}/withdraw', [App\Http\Controllers\Admin\SavingsController::class, 'withdraw'])->name('withdraw');
+        });
         Route::get('/report', [App\Http\Controllers\Admin\SavingsController::class, 'report'])->name('report');
     });
-    
-    // Loan Management - requires finance or admin roles
-    Route::prefix('loans')->name('loans.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan')->group(function () {
+
+    // Loan Management - requires loan permissions
+    Route::prefix('loans')->name('loans.')->middleware('permission:loans.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\LoanController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\LoanController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\LoanController::class, 'store'])->name('store');
+        Route::middleware('permission:loans.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\LoanController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\LoanController::class, 'store'])->name('store');
+        });
         Route::get('/{loan}', [App\Http\Controllers\Admin\LoanController::class, 'show'])->name('show');
-        Route::post('/{loan}/approve', [App\Http\Controllers\Admin\LoanController::class, 'approve'])->name('approve');
-        Route::post('/{loan}/reject', [App\Http\Controllers\Admin\LoanController::class, 'reject'])->name('reject');
+        Route::middleware('permission:loans.approve')->group(function () {
+            Route::post('/{loan}/approve', [App\Http\Controllers\Admin\LoanController::class, 'approve'])->name('approve');
+            Route::post('/{loan}/reject', [App\Http\Controllers\Admin\LoanController::class, 'reject'])->name('reject');
+        });
         Route::post('/{loan}/payment', [App\Http\Controllers\Admin\LoanController::class, 'payment'])->name('payment');
         Route::get('/report', [App\Http\Controllers\Admin\LoanController::class, 'report'])->name('report');
     });
-    
+
     // Savings & Loans Management - combined routes
-    Route::prefix('savings-loans')->name('savings-loans.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan')->group(function () {
+    Route::prefix('savings-loans')->name('savings-loans.')->middleware('permission:savings.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\SavingsLoanController::class, 'index'])->name('index');
         Route::get('/{savingsLoan}', [App\Http\Controllers\Admin\SavingsLoanController::class, 'show'])->name('show');
     });
-    
-    // Business Units - requires unit manager or admin roles
-    Route::prefix('units')->name('units.')->middleware('role:super-admin,ketua-koperasi,manager-unit')->group(function () {
+
+    // Business Units - requires unit permissions
+    Route::prefix('units')->name('units.')->middleware('permission:units.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\BusinessUnitController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\BusinessUnitController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\BusinessUnitController::class, 'store'])->name('store');
+        Route::middleware('permission:units.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\BusinessUnitController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\BusinessUnitController::class, 'store'])->name('store');
+        });
         Route::get('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'show'])->name('show');
-        Route::get('/{unit}/edit', [App\Http\Controllers\Admin\BusinessUnitController::class, 'edit'])->name('edit');
-        Route::put('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'update'])->name('update');
-        Route::delete('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'destroy'])->name('destroy');
+        Route::middleware('permission:units.edit')->group(function () {
+            Route::get('/{unit}/edit', [App\Http\Controllers\Admin\BusinessUnitController::class, 'edit'])->name('edit');
+            Route::put('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'update'])->name('update');
+        });
+        Route::middleware('permission:units.delete')->group(function () {
+            Route::delete('/{unit}', [App\Http\Controllers\Admin\BusinessUnitController::class, 'destroy'])->name('destroy');
+        });
         Route::post('/{unit}/transaction', [App\Http\Controllers\Admin\BusinessUnitController::class, 'transaction'])->name('transaction');
-        Route::get('/{unit}/transaction', function() {
+        Route::get('/{unit}/transaction', function () {
             return redirect()->back()->with('error', 'Akses transaksi hanya melalui form submission');
         });
         Route::get('/{unit}/report', [App\Http\Controllers\Admin\BusinessUnitController::class, 'report'])->name('report');
         Route::get('/{unit}/report/pdf', [App\Http\Controllers\Admin\BusinessUnitController::class, 'reportPDF'])->name('report.pdf');
-        
+
         // Specific unit types
         Route::get('/type/sembako', [App\Http\Controllers\Admin\BusinessUnitController::class, 'sembako'])->name('sembako');
         Route::get('/type/apotek', [App\Http\Controllers\Admin\BusinessUnitController::class, 'apotek'])->name('apotek');
         Route::get('/type/klinik', [App\Http\Controllers\Admin\BusinessUnitController::class, 'klinik'])->name('klinik');
         Route::get('/type/logistik', [App\Http\Controllers\Admin\BusinessUnitController::class, 'logistik'])->name('logistik');
     });
-    
-    // Transactions - accessible to all operational roles
-    Route::prefix('transactions')->name('transactions.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan,manager-unit,staff-administrasi,bendahara-unit')->group(function () {
+
+    // Transactions - requires transaction permissions
+    Route::prefix('transactions')->name('transactions.')->middleware('permission:transactions.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\TransactionController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\TransactionController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\TransactionController::class, 'store'])->name('store');
+        Route::middleware('permission:transactions.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\TransactionController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\TransactionController::class, 'store'])->name('store');
+        });
         Route::get('/daily', [App\Http\Controllers\Admin\TransactionController::class, 'daily'])->name('daily');
         Route::get('/monthly', [App\Http\Controllers\Admin\TransactionController::class, 'monthly'])->name('monthly');
         Route::post('/export', [App\Http\Controllers\Admin\TransactionController::class, 'export'])->name('export');
@@ -108,28 +134,94 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::put('/{transaction}', [App\Http\Controllers\Admin\TransactionController::class, 'update'])->name('update');
         Route::delete('/{transaction}', [App\Http\Controllers\Admin\TransactionController::class, 'destroy'])->name('destroy');
     });
-    
-    // Reports - accessible to management roles
-    Route::prefix('reports')->name('reports.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan,manager-unit')->group(function () {
+
+    // Reports - requires report permissions
+    Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
-        Route::get('/financial', [App\Http\Controllers\Admin\ReportController::class, 'financial'])->name('financial');
-        Route::get('/members', [App\Http\Controllers\Admin\ReportController::class, 'members'])->name('members');
-        Route::get('/units', [App\Http\Controllers\Admin\ReportController::class, 'units'])->name('units');
-        Route::get('/generate', [App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('generate');
-        Route::post('/generate', [App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('generate.store');
+        Route::middleware('permission:reports.financial')->group(function () {
+            Route::get('/financial', [App\Http\Controllers\Admin\ReportController::class, 'financial'])->name('financial');
+        });
+        Route::middleware('permission:reports.members')->group(function () {
+            Route::get('/members', [App\Http\Controllers\Admin\ReportController::class, 'members'])->name('members');
+        });
+        Route::middleware('permission:reports.units')->group(function () {
+            Route::get('/units', [App\Http\Controllers\Admin\ReportController::class, 'units'])->name('units');
+        });
+        Route::middleware('permission:reports.generate')->group(function () {
+            Route::get('/generate', [App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('generate');
+            Route::post('/generate', [App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('generate.store');
+        });
         Route::get('/{report}', [App\Http\Controllers\Admin\ReportController::class, 'show'])->name('show');
     });
-    
-    // Settings - accessible to all authenticated users
-    Route::prefix('settings')->name('settings.')->middleware('role:super-admin,ketua-koperasi,manager-keuangan,manager-unit,staff-administrasi,bendahara-unit,anggota')->group(function () {
+
+    // Users Management - requires user management permissions
+    Route::prefix('users')->name('users.')->middleware('permission:users.view')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('index');
+        Route::middleware('permission:users.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\UserController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('store');
+        });
+        Route::get('/{user}', [App\Http\Controllers\Admin\UserController::class, 'show'])->name('show');
+        Route::middleware('permission:users.edit')->group(function () {
+            Route::get('/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('edit');
+            Route::put('/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('update');
+            Route::put('/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{user}/assign-roles', [App\Http\Controllers\Admin\UserController::class, 'assignRoles'])->name('assign-roles');
+        });
+        Route::middleware('permission:users.delete')->group(function () {
+            Route::delete('/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('destroy');
+        });
+    });
+
+    // Roles Management - requires role management permissions
+    Route::prefix('roles')->name('roles.')->middleware('permission:roles.view')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\RoleController::class, 'index'])->name('index');
+        Route::middleware('permission:roles.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\RoleController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\RoleController::class, 'store'])->name('store');
+        });
+        Route::get('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'show'])->name('show');
+        Route::middleware('permission:roles.edit')->group(function () {
+            Route::get('/{role}/edit', [App\Http\Controllers\Admin\RoleController::class, 'edit'])->name('edit');
+            Route::put('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'update'])->name('update');
+            Route::post('/{role}/assign-permissions', [App\Http\Controllers\Admin\RoleController::class, 'assignPermissions'])->name('assign-permissions');
+        });
+        Route::middleware('permission:roles.delete')->group(function () {
+            Route::delete('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('destroy');
+        });
+    });
+
+    // Permissions Management - requires permission management permissions
+    Route::prefix('permissions')->name('permissions.')->middleware('permission:permissions.view')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('index');
+        Route::middleware('permission:permissions.create')->group(function () {
+            Route::get('/create', [App\Http\Controllers\Admin\PermissionController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\PermissionController::class, 'store'])->name('store');
+        });
+        Route::get('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'show'])->name('show');
+        Route::middleware('permission:permissions.edit')->group(function () {
+            Route::get('/{permission}/edit', [App\Http\Controllers\Admin\PermissionController::class, 'edit'])->name('edit');
+            Route::put('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('update');
+            Route::post('/{permission}/assign-roles', [App\Http\Controllers\Admin\PermissionController::class, 'assignRoles'])->name('assign-roles');
+            Route::delete('/{permission}/remove-role/{role}', [App\Http\Controllers\Admin\PermissionController::class, 'removeRole'])->name('remove-role');
+        });
+        Route::middleware('permission:permissions.delete')->group(function () {
+            Route::delete('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('destroy');
+        });
+    });
+
+    // Settings - accessible to all authenticated users with permissions
+    Route::prefix('settings')->name('settings.')->middleware('permission:settings.view')->group(function () {
         Route::get('/profile', function () {
             return view('admin.settings.profile');
         })->name('profile');
-        
-        Route::get('/system', function () {
-            return view('admin.settings.system');
-        })->name('system');
-        
+
+        Route::middleware('permission:settings.system')->group(function () {
+            Route::get('/system', function () {
+                return view('admin.settings.system');
+            })->name('system');
+        });
+
         // Profile update routes
         Route::put('/profile', function (Illuminate\Http\Request $request) {
             // Update user profile logic
@@ -143,7 +235,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
                 'address' => 'nullable|string|max:500',
                 'email_notifications' => 'boolean',
             ]);
-            
+
             $user->full_name = $validated['full_name'] ?? $user->full_name;
             $user->email = $validated['email'];
             $user->phone = $validated['phone'] ?? $user->phone;
@@ -151,29 +243,29 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             $user->address = $validated['address'] ?? $user->address;
             $user->email_notifications = $validated['email_notifications'] ?? $user->email_notifications;
             $user->save();
-            
+
             return back()->with('success', 'Profil berhasil diperbarui');
         })->name('profile.update');
-        
+
         Route::put('/password', function (Illuminate\Http\Request $request) {
             // Update password logic
             $validated = $request->validate([
                 'current_password' => 'required|string',
                 'password' => 'required|string|min:8|confirmed',
             ]);
-            
+
             if (!Hash::check($validated['current_password'], auth()->user()->password)) {
                 return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai']);
             }
-            
+
             /** @var User $user */
             $user = auth()->user();
             $user->password = Hash::make($validated['password']);
             $user->save();
-            
+
             return back()->with('success', 'Password berhasil diperbarui');
         })->name('password.update');
-        
+
         Route::put('/preferences', function (Illuminate\Http\Request $request) {
             // Update user preferences logic
             $validated = $request->validate([
@@ -184,7 +276,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
                 'notification_push' => 'boolean',
                 'notification_sms' => 'boolean',
             ]);
-            
+
             /** @var User $user */
             $user = auth()->user();
             $user->theme = $validated['theme'];
@@ -194,28 +286,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             $user->notification_push = $request->has('notification_push');
             $user->notification_sms = $request->has('notification_sms');
             $user->save();
-            
+
             return back()->with('success', 'Preferensi berhasil diperbarui');
         })->name('preferences.update');
-        
+
         Route::post('/avatar', function (Illuminate\Http\Request $request) {
             // Update avatar logic
             $validated = $request->validate([
                 'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
-            
+
             $avatar = $request->file('avatar');
             $avatarName = time() . '.' . $avatar->getClientOriginalExtension();
             $avatar->move(public_path('avatars'), $avatarName);
-            
+
             /** @var User $user */
             $user = auth()->user();
             $user->avatar = $avatarName;
             $user->save();
-            
+
             return back()->with('success', 'Foto profil berhasil diperbarui');
         })->name('avatar.update');
-        
+
         // System settings routes
         Route::put('/system/general', function (Illuminate\Http\Request $request) {
             // Update system general settings logic
@@ -227,13 +319,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
                 'debug_mode' => 'boolean',
                 'maintenance_mode' => 'boolean',
             ]);
-            
+
             // Update .env file or settings table
             // This is a placeholder - implement actual settings storage
-            
+
             return back()->with('success', 'Pengaturan umum sistem berhasil diperbarui');
         })->name('system.general.update');
-        
+
         Route::put('/system/email', function (Illuminate\Http\Request $request) {
             // Update email settings logic
             $validated = $request->validate([
@@ -246,13 +338,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
                 'mail_from_address' => 'required|email',
                 'mail_from_name' => 'required|string',
             ]);
-            
+
             // Update mail configuration
             // This is a placeholder - implement actual settings storage
-            
+
             return back()->with('success', 'Pengaturan email berhasil diperbarui');
         })->name('system.email.update');
-        
+
         Route::put('/system/backup/schedule', function (Illuminate\Http\Request $request) {
             // Update backup schedule logic
             $validated = $request->validate([
@@ -260,10 +352,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
                 'backup_time' => 'required|string',
                 'auto_backup' => 'boolean',
             ]);
-            
+
             // Update backup schedule
             // This is a placeholder - implement actual backup scheduling
-            
+
             return back()->with('success', 'Jadwal backup berhasil diperbarui');
         })->name('system.backup.schedule');
     });
@@ -282,7 +374,7 @@ Route::post('/login', function (Illuminate\Http\Request $request) {
 
     // Debug: Log the attempt
     // \Log::info('Login attempt for: ' . $credentials['email']);
-    
+
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
         // \Log::info('Login successful for: ' . $credentials['email']);
@@ -307,7 +399,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('/login', function () {
         return redirect()->route('login');
     })->name('login');
-    
+
     Route::post('/login', function () {
         // TODO: Implement login logic
         return redirect()->route('admin.dashboard');
@@ -316,7 +408,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
         // TODO: Implement logout logic
         return redirect()->route('login');
     })->name('logout');
-    
+
     // Registration
     Route::get('/register', function () {
         return view('auth.register');
@@ -325,7 +417,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
         // TODO: Implement registration logic
         return redirect()->route('login');
     });
-    
+
     // Password reset
     Route::get('/password/reset', function () {
         return view('auth.password.reset');

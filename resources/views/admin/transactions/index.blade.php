@@ -266,9 +266,7 @@
                             <small class="text-muted mb-2 mb-md-0">
                                 Menampilkan {{ $transactions->firstItem() }} - {{ $transactions->lastItem() }} dari {{ $transactions->total() }} data
                             </small>
-                            <nav aria-label="Page navigation">
-                                {{ $transactions->links('pagination::bootstrap-4') }}
-                            </nav>
+                            {{ $transactions->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>

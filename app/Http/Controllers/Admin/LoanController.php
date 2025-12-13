@@ -12,6 +12,14 @@ use Carbon\Carbon;
 
 class LoanController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:loans.view')->only(['index', 'show']);
+        $this->middleware('permission:loans.create')->only(['create', 'store']);
+        $this->middleware('permission:loans.edit')->only(['edit', 'update']);
+        $this->middleware('permission:loans.approve')->only(['approve', 'reject']);
+        $this->middleware('permission:loans.payment')->only(['payment']);
+    }
     public function index(Request $request)
     {
         $query = SavingsLoan::with('member')

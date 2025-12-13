@@ -10,9 +10,28 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Manajemen Simpanan</h5>
-                    <a href="{{ route('admin.savings.create') }}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i> Tambah Simpanan
-                    </a>
+                    <div class="d-flex gap-2">
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="ti ti-printer me-1"></i> Cetak
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="{{ route('admin.savings.print') }}" target="_blank" class="dropdown-item">
+                                        <i class="ti ti-printer me-1"></i> Cetak Data
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.savings.pdf') }}" class="dropdown-item">
+                                        <i class="ti ti-file-text me-1"></i> Download PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <a href="{{ route('admin.savings.create') }}" class="btn btn-primary">
+                            <i class="ti ti-plus me-1"></i> Tambah Simpanan
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Filter Form -->
@@ -209,6 +228,13 @@
                                                             <i class="ti ti-eye me-1"></i> Detail
                                                         </a>
                                                     </li>
+                                                    @can('savings.edit')
+                                                    <li>
+                                                        <a href="{{ route('admin.savings.edit', $saving) }}" class="dropdown-item">
+                                                            <i class="ti ti-edit me-1"></i> Edit
+                                                        </a>
+                                                    </li>
+                                                    @endcan
                                                     @if($saving->status == 'pending')
                                                         <li>
                                                             <form action="{{ route('admin.savings.approve', $saving) }}" method="POST" class="dropdown-item p-0">
@@ -251,7 +277,7 @@
                             <small class="text-muted">
                                 Menampilkan {{ $savings->firstItem() }} - {{ $savings->lastItem() }} dari {{ $savings->total() }} data
                             </small>
-                            {{ $savings->links() }}
+                            {{ $savings->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>

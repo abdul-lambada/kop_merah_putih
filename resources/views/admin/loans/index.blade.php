@@ -245,9 +245,12 @@
                                                     @endif
                                                     @if($loan->status == 'active' || $loan->status == 'overdue')
                                                         <li>
-                                                            <a href="{{ route('admin.loans.payment', $loan) }}" class="dropdown-item">
-                                                                <i class="ti ti-cash ti-sm me-1"></i> Bayar Cicilan
-                                                            </a>
+                                                            <form action="{{ route('admin.loans.payment', $loan) }}" method="POST" class="dropdown-item p-0">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-link text-primary w-100 text-start">
+                                                                    <i class="ti ti-cash ti-sm me-1"></i> Bayar Cicilan
+                                                                </button>
+                                                            </form>
                                                         </li>
                                                     @endif
                                                 </ul>
@@ -272,7 +275,7 @@
                             <small class="text-muted">
                                 Menampilkan {{ $loans->firstItem() }} - {{ $loans->lastItem() }} dari {{ $loans->total() }} data
                             </small>
-                            {{ $loans->links() }}
+                            {{ $loans->links('pagination.sneat') }}
                         </div>
                     @endif
                 </div>
