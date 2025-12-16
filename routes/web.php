@@ -17,9 +17,10 @@ use App\Models\User;
 */
 
 // Landing page
-Route::get('/', function () {
-    return view('landing');
-});
+Route::get('/', [App\Http\Controllers\LandingController::class, 'index'])->name('landing');
+Route::post('/register', [App\Http\Controllers\LandingController::class, 'storeRegistration'])
+    ->name('landing.register')
+    ->middleware('rate.limit.registration');
 
 // Admin routes group
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
@@ -208,6 +209,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::middleware('permission:permissions.delete')->group(function () {
             Route::delete('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('destroy');
         });
+    });
+
+    // Export & Reporting - requires report permissions
+    Route::prefix('export')->name('export.')->middleware('permission:reports.generate')->group(function () {
+        Route::get('/members', [App\Http\Controllers\Admin\ExportController::class, 'members'])->name('members');
+        Route::get('/financial', [App\Http\Controllers\Admin\ExportController::class, 'financialReport'])->name('financial');
+        Route::get('/summary', [App\Http\Controllers\Admin\ExportController::class, 'summaryReport'])->name('summary');
+    });
+
+    // Village Settings - requires system permissions
+    Route::prefix('village-settings')->name('village-settings.')->middleware('permission:settings.system')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\VillageSettingsController::class, 'index'])->name('index');
+        Route::put('/', [App\Http\Controllers\Admin\VillageSettingsController::class, 'update'])->name('update');
+        Route::delete('/logo', [App\Http\Controllers\Admin\VillageSettingsController::class, 'removeLogo'])->name('remove-logo');
     });
 
     // Settings - accessible to all authenticated users with permissions

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('business_sector', ['pertanian', 'peternakan', 'perikanan', 'umkm']);
             $table->enum('experience', ['baru', '2-5_tahun', '5+_tahun']);
             $table->date('join_date');
-            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+            $table->enum('status', ['active', 'inactive', 'suspended', 'pending'])->default('pending');
             $table->decimal('savings_balance', 15, 2)->default(0);
             $table->decimal('loan_limit', 15, 2)->default(0);
             $table->json('verification_data')->nullable();
