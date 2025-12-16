@@ -121,6 +121,7 @@ class MemberController extends Controller
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
+            'nik' => 'required|string|unique:members,nik,' . $member->id,
             'email' => 'nullable|email|unique:members,email,' . $member->id,
             'phone' => 'required|string|max:20',
             'address' => 'required|string',
