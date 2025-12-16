@@ -35,11 +35,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Mulai</label>
-                            <input type="date" name="date_start" class="form-control" value="{{ request('date_start') }}">
+                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Akhir</label>
-                            <input type="date" name="date_end" class="form-control" value="{{ request('date_end') }}">
+                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">&nbsp;</label>
@@ -245,12 +245,9 @@
                                                     @endif
                                                     @if($loan->status == 'active' || $loan->status == 'overdue')
                                                         <li>
-                                                            <form action="{{ route('admin.loans.payment', $loan) }}" method="POST" class="dropdown-item p-0">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-link text-primary w-100 text-start">
-                                                                    <i class="ti ti-cash ti-sm me-1"></i> Bayar Cicilan
-                                                                </button>
-                                                            </form>
+                                                            <a href="{{ route('admin.loans.show', ['loan' => $loan->id, 'open_payment' => 1]) }}" class="dropdown-item">
+                                                                <i class="ti ti-cash ti-sm me-1"></i> Bayar Cicilan
+                                                            </a>
                                                         </li>
                                                     @endif
                                                 </ul>

@@ -181,7 +181,7 @@
                                     
                                     <div class="col-12">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="maintenance_mode" id="maintenanceMode">
+                                            <input class="form-check-input" type="checkbox" name="maintenance_mode" id="maintenanceMode" {{ app()->isDownForMaintenance() ? 'checked' : '' }}>
                                             <label class="form-check-label" for="maintenanceMode">
                                                 Maintenance Mode
                                             </label>
@@ -371,7 +371,7 @@
                                     </div>
                                     
                                     <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" name="maintenance_mode_switch" id="maintenanceModeSwitch">
+                                        <input class="form-check-input" type="checkbox" name="maintenance_mode_switch" id="maintenanceModeSwitch" {{ app()->isDownForMaintenance() ? 'checked' : '' }}>
                                         <label class="form-check-label" for="maintenanceModeSwitch">
                                             Aktifkan Maintenance Mode
                                         </label>
@@ -379,7 +379,7 @@
                                     
                                     <div class="mb-4">
                                         <label class="form-label">Pesan Maintenance</label>
-                                        <textarea class="form-control" name="maintenance_message" rows="3" placeholder="Sistem sedang dalam maintenance. Silakan coba lagi beberapa saat.">Sistem sedang dalam maintenance. Silakan coba lagi beberapa saat.</textarea>
+                                        <textarea class="form-control" name="maintenance_message" rows="3" placeholder="Sistem sedang dalam maintenance. Silakan coba lagi beberapa saat.">{{ env('APP_MAINTENANCE_MESSAGE', 'Sistem sedang dalam maintenance. Silakan coba lagi beberapa saat.') }}</textarea>
                                     </div>
                                     
                                     <button type="button" class="btn btn-warning" onclick="toggleMaintenance()">
@@ -447,8 +447,39 @@ function downloadBackup() {
 }
 
 function toggleMaintenance() {
-    // Implement maintenance mode toggle
-    alert('Toggling maintenance mode...');
+    const switchEl = document.getElementById('maintenanceModeSwitch');
+    const messageEl = document.querySelector('textarea[name="maintenance_message"]');
+    const enabled = switchEl.checked;
+    const message = messageEl ? messageEl.value : '';
+
+    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+
+    fetch("{{ route('admin.settings.system.maintenance.toggle') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            enable: enabled ? 1 : 0,
+            message: message,
+        }),
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        alert('Maintenance mode ' + (data.maintenance ? 'diaktifkan' : 'dinonaktifkan'));
+    })
+    .catch(function() {
+        alert('Gagal mengupdate maintenance mode');
+        switchEl.checked = !enabled;
+    });
 }
 
 function clearCache(type) {

@@ -196,7 +196,7 @@ class MemberController extends Controller
 
     public function print()
     {
-        $members = Member::with(['user', 'verificationData'])
+        $members = Member::query()
             ->when(request('status'), function ($query, $status) {
                 return $query->where('status', $status);
             })
@@ -215,7 +215,7 @@ class MemberController extends Controller
 
     public function pdf()
     {
-        $members = Member::with(['user', 'verificationData'])
+        $members = Member::query()
             ->when(request('status'), function ($query, $status) {
                 return $query->where('status', $status);
             })

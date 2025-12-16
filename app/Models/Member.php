@@ -59,4 +59,24 @@ class Member extends Model
             ->where('status', 'completed')
             ->sum('amount');
     }
+
+    /**
+     * Backwards-compatible helper used in views to get total savings.
+     * Mirrors the logic from the total_savings accessor.
+     */
+    public function totalSavings()
+    {
+        return $this->total_savings;
+    }
+
+    /**
+     * Helper used in views to get total active loan amount.
+     */
+    public function activeLoanAmount()
+    {
+        return $this->savingsLoans()
+            ->where('type', 'loan')
+            ->whereIn('status', ['active', 'overdue'])
+            ->sum('amount');
+    }
 }

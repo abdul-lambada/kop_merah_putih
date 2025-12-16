@@ -252,4 +252,16 @@
     </div>
 </div>
 @endif
+
+@if(request('open_payment') && $loan->status == 'active')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalEl = document.getElementById('paymentModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            var paymentModal = new bootstrap.Modal(modalEl);
+            paymentModal.show();
+        }
+    });
+</script>
+@endif
 @endsection

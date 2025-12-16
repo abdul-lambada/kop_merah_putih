@@ -59,11 +59,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Mulai</label>
-                            <input type="date" name="date_start" class="form-control" value="{{ request('date_start') }}">
+                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Akhir</label>
-                            <input type="date" name="date_end" class="form-control" value="{{ request('date_end') }}">
+                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
                         </div>
                     </form>
                 </div>

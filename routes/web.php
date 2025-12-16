@@ -3,7 +3,49 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\User;
+
+if (!function_exists('updateEnvValues')) {
+    function updateEnvValues(array $values): void
+    {
+        $envPath = base_path('.env');
+
+        if (!file_exists($envPath) || !is_writable($envPath)) {
+            return;
+        }
+
+        $env = file_get_contents($envPath);
+
+        foreach ($values as $key => $value) {
+            $key = strtoupper($key);
+            $escapedKey = preg_quote($key, '/');
+
+            if (is_bool($value)) {
+                $valueString = $value ? 'true' : 'false';
+            } elseif ($value === null) {
+                $valueString = 'null';
+            } else {
+                $valueString = (string) $value;
+
+                if (strpbrk($valueString, " \t#") !== false) {
+                    $valueString = '"' . str_replace('"', '\\"', $valueString) . '"';
+                }
+            }
+
+            $pattern = "/^{$escapedKey}=.*$/m";
+            $replacement = $key . '=' . $valueString;
+
+            if (preg_match($pattern, $env)) {
+                $env = preg_replace($pattern, $replacement, $env);
+            } else {
+                $env .= PHP_EOL . $replacement;
+            }
+        }
+
+        file_put_contents($envPath, $env);
+    }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -338,6 +380,32 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             // Update .env file or settings table
             // This is a placeholder - implement actual settings storage
 
+            $debugEnabled = $request->boolean('debug_mode');
+            $maintenanceEnabled = $request->boolean('maintenance_mode');
+
+            if ($maintenanceEnabled) {
+                Artisan::call('down');
+            } else {
+                Artisan::call('up');
+            }
+
+            updateEnvValues([
+                'APP_NAME' => $validated['app_name'],
+                'APP_URL' => $validated['app_url'],
+                'APP_DEBUG' => $debugEnabled,
+                'APP_TIMEZONE' => $validated['timezone'],
+                'APP_LOCALE' => $validated['locale'],
+                'APP_MAINTENANCE' => $maintenanceEnabled,
+            ]);
+
+            config([
+                'app.name' => $validated['app_name'],
+                'app.url' => $validated['app_url'],
+                'app.debug' => $debugEnabled,
+                'app.timezone' => $validated['timezone'],
+                'app.locale' => $validated['locale'],
+            ]);
+
             return back()->with('success', 'Pengaturan umum sistem berhasil diperbarui');
         })->name('system.general.update');
 
@@ -357,6 +425,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             // Update mail configuration
             // This is a placeholder - implement actual settings storage
 
+            $envValues = [
+                'MAIL_MAILER' => $validated['mail_driver'],
+                'MAIL_HOST' => $validated['mail_host'],
+                'MAIL_PORT' => $validated['mail_port'],
+                'MAIL_USERNAME' => $validated['mail_username'] ?? null,
+                'MAIL_ENCRYPTION' => $validated['mail_encryption'] !== '' ? $validated['mail_encryption'] : null,
+                'MAIL_FROM_ADDRESS' => $validated['mail_from_address'],
+                'MAIL_FROM_NAME' => $validated['mail_from_name'],
+            ];
+
+            if (!empty($validated['mail_password'])) {
+                $envValues['MAIL_PASSWORD'] = $validated['mail_password'];
+            }
+
+            updateEnvValues($envValues);
+
             return back()->with('success', 'Pengaturan email berhasil diperbarui');
         })->name('system.email.update');
 
@@ -371,8 +455,49 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             // Update backup schedule
             // This is a placeholder - implement actual backup scheduling
 
+            updateEnvValues([
+                'BACKUP_FREQUENCY' => $validated['backup_frequency'],
+                'BACKUP_TIME' => $validated['backup_time'],
+                'BACKUP_AUTO' => $request->boolean('auto_backup'),
+            ]);
+
             return back()->with('success', 'Jadwal backup berhasil diperbarui');
         })->name('system.backup.schedule');
+
+        Route::post('/system/maintenance', function (Illuminate\Http\Request $request) {
+            $validated = $request->validate([
+                'enable' => 'required|boolean',
+                'message' => 'nullable|string|max:1000',
+            ]);
+
+            $enable = $validated['enable'];
+            $message = isset($validated['message']) ? trim($validated['message']) : '';
+
+            if ($enable) {
+                $options = [];
+                if (!empty($validated['message'])) {
+                    $options['--message'] = $validated['message'];
+                }
+                Artisan::call('down', $options);
+            } else {
+                Artisan::call('up');
+            }
+
+            $envValues = [
+                'APP_MAINTENANCE' => $enable,
+            ];
+
+            if ($message !== '') {
+                $envValues['APP_MAINTENANCE_MESSAGE'] = $message;
+            }
+
+            updateEnvValues($envValues);
+
+            return response()->json([
+                'status' => 'ok',
+                'maintenance' => $enable,
+            ]);
+        })->name('system.maintenance.toggle');
     });
 });
 

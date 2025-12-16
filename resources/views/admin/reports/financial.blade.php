@@ -447,13 +447,25 @@ document.querySelector('select[name="period"]').addEventListener('change', funct
 
 <style>
 @media print {
-    .no-print {
-        display: none !important;
-    }
-    
     .card-header .d-flex,
     .btn {
         display: none !important;
+    }
+    
+    /* Sembunyikan layout global admin saat print */
+    .layout-navbar,
+    .layout-menu,
+    .layout-footer {
+        display: none !important; 
+    }
+
+    /* Gunakan lebar penuh untuk konten laporan */
+    .container-xxl,
+    .container-p-y {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     
     .table {
@@ -461,7 +473,7 @@ document.querySelector('select[name="period"]').addEventListener('change', funct
     }
     
     .card {
-        border: 1px solid #000 !important;
+        border: none !important;
         box-shadow: none !important;
     }
 }

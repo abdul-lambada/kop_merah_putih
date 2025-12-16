@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\BusinessUnit;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class SavingsController extends Controller
 {
@@ -260,5 +261,71 @@ class SavingsController extends Controller
             ->take(10);
 
         return view('admin.savings.report', compact('monthlySavings', 'topSavers'));
+    }
+
+    public function print(Request $request)
+    {
+        $query = SavingsLoan::with('member')
+            ->where('type', 'savings');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('transaction_number', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('member', function ($memberQuery) use ($request) {
+                      $memberQuery->where('full_name', 'like', '%' . $request->search . '%')
+                                  ->orWhere('member_number', 'like', '%' . $request->search . '%');
+                  });
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $savings = $query->orderBy('created_at', 'desc')->get();
+
+        return view('admin.savings.print', compact('savings'));
+    }
+
+    public function pdf(Request $request)
+    {
+        $query = SavingsLoan::with('member')
+            ->where('type', 'savings');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('transaction_number', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('member', function ($memberQuery) use ($request) {
+                      $memberQuery->where('full_name', 'like', '%' . $request->search . '%')
+                                  ->orWhere('member_number', 'like', '%' . $request->search . '%');
+                  });
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $savings = $query->orderBy('created_at', 'desc')->get();
+
+        $pdf = PDF::loadView('admin.savings.pdf', compact('savings'));
+
+        return $pdf->download('savings-' . date('Y-m-d') . '.pdf');
     }
 }

@@ -52,11 +52,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Mulai</label>
-                            <input type="date" name="date_start" class="form-control" value="{{ request('date_start') }}">
+                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tanggal Akhir</label>
-                            <input type="date" name="date_end" class="form-control" value="{{ request('date_end') }}">
+                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">&nbsp;</label>
@@ -228,13 +228,7 @@
                                                             <i class="ti ti-eye me-1"></i> Detail
                                                         </a>
                                                     </li>
-                                                    @can('savings.edit')
-                                                    <li>
-                                                        <a href="{{ route('admin.savings.edit', $saving) }}" class="dropdown-item">
-                                                            <i class="ti ti-edit me-1"></i> Edit
-                                                        </a>
-                                                    </li>
-                                                    @endcan
+                                                    {{-- Tombol Edit dinonaktifkan sementara karena fitur edit simpanan belum diimplementasikan sepenuhnya --}}
                                                     @if($saving->status == 'pending')
                                                         <li>
                                                             <form action="{{ route('admin.savings.approve', $saving) }}" method="POST" class="dropdown-item p-0">

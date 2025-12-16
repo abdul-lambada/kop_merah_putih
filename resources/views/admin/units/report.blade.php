@@ -304,10 +304,24 @@
 <style>
 @media print {
     .card-header .d-flex.gap-2,
-    .btn,
+    .btn {
+        display: none !important;
+    }
+    
+    /* Sembunyikan layout global admin saat print */
+    .layout-navbar,
+    .layout-menu,
+    .layout-footer {
+        display: none !important;
+    }
+
+    /* Gunakan lebar penuh untuk konten laporan */
     .container-xxl,
     .container-p-y {
-        display: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     
     .card-header {
