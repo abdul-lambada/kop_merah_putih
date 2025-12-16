@@ -55,7 +55,7 @@ class LandingController extends Controller
             'recent_loans' => Loan::with('member')->latest()->take(3)->get(),
         ];
 
-        return view('landing', compact('stats', 'services', 'villageSettings', 'businessUnits', 'recentActivities'));
+        return view('landing', compact('stats', 'formattedStats', 'services', 'villageSettings', 'businessUnits', 'recentActivities'));
     }
 
     private function getPertanianServices($businessUnits)
